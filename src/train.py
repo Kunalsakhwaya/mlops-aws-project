@@ -2,15 +2,26 @@ import pandas as pd
 import pickle
 import os
 
-# Paths
 DATA_PATH = "data/ratings.csv"
 MODEL_PATH = "model.pkl"
+
+DEFAULT_DATA = """user_id,movie_id,rating
+1,101,5
+1,102,4
+2,101,3
+2,103,5
+3,102,4
+3,103,4
+4,101,5
+"""
 
 def train_model():
     print("Loading data...")
     if not os.path.exists(DATA_PATH):
-        print(f"Error: Data file {DATA_PATH} not found.")
-        return
+        print(f"Data file {DATA_PATH} not found. Creating default dataset...")
+        os.makedirs(os.path.dirname(DATA_PATH), exist_ok=True)
+        with open(DATA_PATH, "w") as f:
+            f.write(DEFAULT_DATA)
         
     df = pd.read_csv(DATA_PATH)
     
