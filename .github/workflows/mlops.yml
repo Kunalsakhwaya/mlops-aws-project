@@ -66,6 +66,7 @@ jobs:
           source venv/bin/activate
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirment.txt ]; then pip install -r requirment.txt; fi
+          python3 src/train.py
           sudo fuser -k 8000/tcp || true
           nohup venv/bin/uvicorn src.app:app --host 0.0.0.0 --port 8000 </dev/null >app.log 2>&1 &
           sleep 2

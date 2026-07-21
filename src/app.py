@@ -4,14 +4,16 @@ import os
 
 app = FastAPI(title="Movie Recommender API")
 
-MODEL_PATH = "model.pkl"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "model.pkl")
 model_data = None
 
 @app.on_event("startup")
 def load_model():
     global model_data
-    if os.path.exists(MODEL_PATH):
-        with open(MODEL_PATH, "rb") as f:
+    target_path = MODEL_PATH if os.path.exists(MODEL_PATH) else "model.pkl"
+    if os.path.exists(target_path):
+        with open(target_path, "rb") as f:
             model_data = pickle.load(f)
     else:
         print("Warning: Model not found. Run train.py first.")
