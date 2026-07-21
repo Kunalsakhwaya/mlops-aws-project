@@ -1,0 +1,78 @@
+name: MLOps Training & Deployment Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  train-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirment.txt ]; then pip install -r requirment.txt; fi
+
+    - name: Sync Dataset from S3 (if exists)
+      run: |
+        aws s3 sync s3://${{ secrets.S3_BUCKET_NAME }}/ data/ || true
+
+    - name: Train ML Model
+      run: |
+        python src/train.py
+
+    - name: Upload Trained Model to S3 (Backup)
+      run: |
+        aws s3 cp model.pkl s3://${{ secrets.S3_BUCKET_NAME }}/model.pkl || true
+
+    - name: Deploy to EC2 Instance
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          sudo apt-get update -y
+          sudo apt-get install -y python3-pip python3-venv git awscli
+          
+          mkdir -p ~/app
+          cd ~/app
+          
+          if [ -d ".git" ]; then
+            git pull origin main
+          else
+            git clone https://github.com/Kunalsakhwaya/mlops-aws-project.git .
+          fi
+          
+          python3 -m venv venv
+          source venv/bin/activate
+          
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirment.txt ]; then pip install -r requirment.txt; fi
+          
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ secrets.AWS_REGION }}
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/model.pkl model.pkl || true
+          
+          pkill -f uvicorn || true
+          nohup venv/bin/uvicorn src.app:app --host 0.0.0.0 --port 8000 > app.log 2>&1 &
+          echo "Deployment finished successfully!"

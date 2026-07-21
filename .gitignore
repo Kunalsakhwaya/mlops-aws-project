@@ -1,0 +1,26 @@
+# Ignore documentation folder
+docs/
+
+# Python ignores
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment variables
+.env
+
+# Trained ML Models (To save space on github)
+*.pkl
+*.h5
+*.model
+
+# Datasets
+data/
+*.csv
