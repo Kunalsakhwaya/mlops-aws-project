@@ -67,5 +67,6 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirment.txt ]; then pip install -r requirment.txt; fi
           pkill -f uvicorn || true
-          nohup venv/bin/uvicorn src.app:app --host 0.0.0.0 --port 8000 > app.log 2>&1 &
+          nohup venv/bin/uvicorn src.app:app --host 0.0.0.0 --port 8000 </dev/null >app.log 2>&1 &
+          sleep 3
           echo "Deployment finished successfully!"
